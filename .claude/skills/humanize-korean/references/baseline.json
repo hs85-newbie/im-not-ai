@@ -1,8 +1,31 @@
 {
   "version": "v1.6-2026-05-06",
   "source": "KatFish (Park et al., 인간 470 vs LLM 1,624편 / 에세이 771·시 945·초록 378) + LREAD 인간 판독 실험",
-  "notes": "metric-engineer는 이 baseline을 그대로 import해 z-score 계산에 사용한다. 미공개 셀은 null. 사용자 코퍼스로 보강 시 source에 ',user-corpus-{date}' 추가.",
+  "notes": "metric-engineer는 이 baseline을 그대로 import해 z-score 계산에 사용한다. 미공개 셀은 null. 사용자 코퍼스로 보강 시 source에 ',user-corpus-{date}' 추가. fiction_ko(2026-08-18)는 KatFish 가 아니라 별도 실측 — _meta 참조.",
   "genres": {
+    "fiction_ko": {
+      "comma_inclusion_rate": {"human": 18.04, "ai": 51.12, "ratio": 2.83, "unit": "percent"},
+      "comma_usage_rate": {"human": 0.26, "ai": 0.62, "ratio": 2.38, "unit": "per_sentence"},
+      "comma_segment_length": {"human": 6.67, "ai": 5.63, "ratio": 0.84, "unit": "eojeol_per_segment"},
+      "ending_comma_rate": {"human": 8.45, "ai": 48.21, "ratio": 5.71, "unit": "percent"},
+      "lexical_diversity": {"human": 0.77, "ai": 0.57, "ratio": 0.74, "unit": "ttr_0to1"},
+      "_meta": {
+        "label": "한국어 문학 산문(1인칭 서사)",
+        "measured_on": "2026-08-18",
+        "human_source": "위키문헌 저작권 만료 근대소설 12편(현진건·이효석·김유정·최서해·채만식·김동인), 회차 길이로 분할 37조각",
+        "ai_source": "장편 연재 한국어 원고 94회차(Claude Opus 집필, 서술 산문만)",
+        "note": "에세이 셀을 소설에 대면 화자의 리듬까지 과탐된다. ending_comma_rate 가 특히 갈린다 — 에세이 인간 4.10 / 문학 인간 8.45 / 본 AI 표본 48.21.",
+        "z_note": "z 는 (ai-human)/2 를 시그마 대용으로 쓴다. 이 장르는 양쪽이 모두 실측이라 본 AI 표본 평균이 곧 z=+2.0 이고, 사람 문학 산문이 z=0 이다.",
+        "direction_warning": "comma_segment_length 는 이 장르에서 방향이 뒤집힌다(에세이는 AI 가 더 길지만 본 표본은 AI 가 더 짧다). _classify_risk 가 z>1.0 에서만 가산하므로 이 지표는 발화하지 않는다 — 오탐이 아니라 미탐이다.",
+        "caveats": [
+          "사람 표본이 1920~30년대 작품이라 당대 구두점 관행이 섞여 있다. 현대 한국 소설 표본이 따로 필요하다.",
+          "표본이 적다(사람 12편 37조각). 추세 판단용이지 정밀 기준선은 아니다.",
+          "AI 열은 단일 모델·단일 작품 표본이다. 한국어 소설 일반의 AI 문체가 아니다.",
+          "lexical_diversity 는 길이에 민감해 양쪽을 같은 길이로 잘라 비교했다."
+        ],
+        "reproduce": "python3 scripts/measure_fiction_baseline.py --fetch"
+      }
+    },
     "essay": {
       "comma_inclusion_rate": {"human": 26.31, "ai": 61.03, "ratio": 2.32, "unit": "percent"},
       "comma_usage_rate": {"human": 1.13, "ai": 2.56, "ratio": 2.27, "unit": "per_sentence"},
