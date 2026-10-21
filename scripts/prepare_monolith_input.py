@@ -274,6 +274,17 @@ def count_v26_tells(text: str) -> tuple[int, dict]:
     return total, per
 
 
+_ROUTE_RANK = {"light": 0, "standard": 1, "heavy": 2}
+
+
+def _structural_flags(text: str) -> dict:
+    """metrics_v2 가 없는 환경(v1.6 fallback)에서는 신호 없음으로 degrade."""
+    fn = getattr(_metrics_mod, "structural_flags", None)
+    if fn is None or not text:
+        return {"flags": [], "values": {}}
+    return fn(text)
+
+
 def compute_route_hint(metrics_obj: dict) -> dict:
     """metrics_obj(compute_all 산출)로부터 route_hint 권고를 산출한다.
 
@@ -314,12 +325,22 @@ def compute_route_hint(metrics_obj: dict) -> dict:
         reason = (
             f"카운트형 티 {tells}건 · risk_band {risk} — 진단 + 단일 윤문 권장"
         )
+    # 구조 신호 — 어휘 티가 0이어도 구조가 AI 꼴이면 경로를 끌어올린다 (올리기만 한다).
+    # 1개 → 최소 standard, 2개 이상 → heavy. 역치는 사람 금융 코퍼스에서 잡았다.
+    struct = _structural_flags(str(metrics_obj.get("_text") or ""))
+    n_flags = len(struct["flags"])
+    bumped = "heavy" if n_flags >= 2 else "standard" if n_flags == 1 else hint
+    if _ROUTE_RANK[bumped] > _ROUTE_RANK[hint]:
+        hint = bumped
+        reason += f" · 구조 신호 {n_flags}건 상향({', '.join(struct['flags'])})"
     return {
         "route_hint": hint,
         "route_reason": reason,
         "route_signals": {
             "lexical_tell_count": tells,
             "v26_tells": v26_per,
+            "structural_flags": struct["flags"],
+            "structural_values": struct["values"],
             "risk_band": risk,
             "char_count": chars,
         },
@@ -786,6 +807,7 @@ def run_chunk_mode(args: argparse.Namespace, diagnosis: str | None) -> int:
             full_metrics = _metrics_mod.compute_all(
                 text, genre=args.genre, baseline_path=args.baseline
             )
+            full_metrics["_text"] = text  # 구조 신호·v2.6 티 계수용 (직렬화 안 함)
             route = compute_route_hint(full_metrics)
         except Exception:  # noqa: BLE001 — 권고 산출 실패는 치명 아님.
             route = None

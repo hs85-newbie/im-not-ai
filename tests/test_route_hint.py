@@ -214,6 +214,84 @@ class RouteCoverageTests(unittest.TestCase):
         self.assertIn("라우터가 세는 항목", out["route_reason"])
 
 
+FIXTURE_025 = os.path.join(HERE, "fixtures_finance", "concepts_025_excerpt.txt")
+
+# 사람이 쓴 듯한 합성 문단 — 긴 문장·다양한 종결·지시어 없음. 구조 플래그 0 이어야 한다.
+_HUMAN_STYLE = (
+    "지난주 코스피는 외국인이 반도체 대형주를 사들인 덕에 사흘 연속 올랐지만, 금요일에는 "
+    "미국 고용지표가 예상보다 강하게 나오면서 오름폭을 대부분 반납한 채 장을 마쳤다. "
+    "시장에서는 금리 인하 시점이 다시 늦춰질 수 있다는 걱정이 번졌고, 원화는 달러당 "
+    "1,380원대까지 밀렸다. 증권가는 이번 주 발표될 소비자물가를 변곡점으로 보는 분위기다. "
+    "한 자산운용사 관계자는 물가가 한 번 더 높게 나오면 연내 인하 기대를 접어야 할 수도 "
+    "있다고 말했다. 반면 채권 쪽은 비교적 차분했는데, 국고채 3년물 금리가 하루 만에 "
+    "0.03%포인트 오르는 데 그쳤기 때문이다. 업종별로는 조선과 방산이 강세였고 2차전지는 "
+    "약했다. 개인 투자자는 이틀 연속 순매도에 나섰다. 다음 주에는 주요 기업의 실적 발표가 "
+    "몰려 있어 종목별 차별화가 더 뚜렷해질 가능성이 높다. 연기금의 리밸런싱 물량이 "
+    "월말에 몰릴 것이라는 관측도 있어서, 지수가 단기간에 한 방향으로 쏠리기는 쉽지 않아 "
+    "보인다. 한편 유가는 중동 정세가 다소 누그러진 영향으로 배럴당 2달러 가까이 내려 "
+    "정유주에는 부담이 됐고, 항공과 해운처럼 연료비 비중이 큰 업종에서는 오히려 반등을 "
+    "노리는 매수세가 들어왔다. 거래대금은 이틀째 줄어 시장의 관망 심리가 여전함을 "
+    "드러냈다. 변동성지수가 소폭 올랐다는 점도 눈여겨볼 대목이다. 환율 쪽으로 눈을 돌리면 수출업체의 달러 매도가 "
+    "생각보다 적었고, 그 빈자리를 역외 세력의 매수가 채우면서 원화 약세 폭이 커졌다는 "
+    "해석이 나온다. 다만 이런 흐름이 추세로 굳을지는 아직 두고 봐야 한다는 신중론도 "
+    "적지 않다. 어느 쪽이든 이번 주 후반의 미국 지표가 방향을 정할 공산이 크다."
+)
+
+
+def _route_for(text: str) -> dict:
+    """compute_all 산출 + 원문으로 route 를 낸다 (shim 단일 모드와 같은 경로)."""
+    obj = PREP._metrics_mod.compute_all(text, genre="blog")
+    obj["_text"] = text
+    return PREP.compute_route_hint(obj)
+
+
+class StructuralBumpTests(unittest.TestCase):
+    def test_one_flag_bumps_light_to_standard(self) -> None:
+        obj = _metrics_stub(risk_band="low")
+        obj["_text"] = "금리가 올랐다. 환율도 올랐다. 증시는 내렸다. 채권은 보합이었다. " * 30
+        out = PREP.compute_route_hint(obj)
+        self.assertEqual(out["route_hint"], "standard")
+        self.assertIn("구조 신호 1건", out["route_reason"])
+        self.assertEqual(out["route_signals"]["structural_flags"], ["짧은 균일 문장"])
+
+    def test_two_flags_bump_to_heavy(self) -> None:
+        obj = _metrics_stub(risk_band="low")
+        obj["_text"] = (
+            "문제는 금리가 아니라 환율이다. 핵심은 속도가 아니라 방향이다. "
+            "원인은 수요가 아니라 공급이다. 이는 오래 갈 수 있다. "
+        ) * 20
+        out = PREP.compute_route_hint(obj)
+        self.assertEqual(out["route_hint"], "heavy")
+        self.assertGreaterEqual(len(out["route_signals"]["structural_flags"]), 2)
+
+    def test_no_text_keeps_previous_behavior(self) -> None:
+        out = PREP.compute_route_hint(_metrics_stub(risk_band="low"))
+        self.assertEqual(out["route_hint"], "light")
+        self.assertEqual(out["route_signals"]["structural_flags"], [])
+
+    def test_bump_never_lowers_route(self) -> None:
+        obj = _metrics_stub(risk_band="high", pivots=3, balances=2, double_passive=2, have_make=1)
+        obj["_text"] = _HUMAN_STYLE
+        self.assertEqual(PREP.compute_route_hint(obj)["route_hint"], "heavy")
+
+    @unittest.skipUnless(PREP._metrics_mod is not None, "metrics 모듈 없음")
+    def test_concept_025_excerpt_is_not_light(self) -> None:
+        """회귀: 어휘 티는 없는데 구조가 AI 꼴이라 light 로 새던 글 (변경률 0.24% vs 22%)."""
+        with open(FIXTURE_025, encoding="utf-8") as f:
+            text = f.read()
+        self.assertLessEqual(len(text), 1500)
+        out = _route_for(text)
+        self.assertNotEqual(out["route_hint"], "light")
+        self.assertIn("구조 신호", out["route_reason"])
+
+    @unittest.skipUnless(PREP._metrics_mod is not None, "metrics 모듈 없음")
+    def test_human_style_paragraph_stays_light(self) -> None:
+        self.assertGreater(len(_HUMAN_STYLE), 800)
+        out = _route_for(_HUMAN_STYLE)
+        self.assertEqual(out["route_hint"], "light")
+        self.assertEqual(out["route_signals"]["structural_flags"], [])
+
+
 class RouteHintCliTests(unittest.TestCase):
     @unittest.skipUnless(PREP._metrics_mod is not None, "metrics 모듈 없음")
     def test_single_mode_writes_route_hint(self) -> None:
