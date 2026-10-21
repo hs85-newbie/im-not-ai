@@ -1,0 +1,399 @@
+{
+  "generated_at": "2026-10-21T14:57:36+00:00",
+  "provenance": "사람: 금융 증권사 리포트(mirae·samsung) + 경제뉴스(이데일리·연합인포맥스·연합뉴스 경제·매일경제), 2026-10-21 수집, ai_flag 행 제외. 로컬 코퍼스 ~/corpora/macromalt-human. AI: macromalt 자체 생성글(코스피 브리핑·딥다이브·개념 정리). 저작권상 본문은 포함하지 않고 파생 통계만 싣는다.",
+  "thresholds": {
+    "antithesis_min": 3,
+    "mean_sent_len_max_exclusive": 45,
+    "demonstratives_min": 4,
+    "nida_share_min": 0.95,
+    "min_chars": 800
+  },
+  "route_rule": "플래그 1개 → 최소 standard / 2개 이상 → heavy",
+  "human": {
+    "news": {
+      "docs_total": 193,
+      "docs_over_min_chars": 138,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 0,
+            "p75": 0,
+            "p95": 1
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 48.3,
+            "p25": 58.6,
+            "p50": 68.2,
+            "p75": 80.5,
+            "p95": 101.3
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 0,
+            "p75": 0,
+            "p95": 2
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p95": 0.056
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "짧은 균일 문장": 5,
+        "대구 반복(A가 아니라 B)": 1,
+        "문두 지시어 반복": 1
+      },
+      "docs_with_1plus_flags": 6,
+      "docs_with_2plus_flags": 1,
+      "rate_1plus": 0.043,
+      "rate_2plus": 0.007,
+      "inanimate_subject_rate": {
+        "mean": 0.0012,
+        "docs_nonzero": 4
+      }
+    },
+    "report": {
+      "docs_total": 68,
+      "docs_over_min_chars": 33,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 0,
+            "p75": 0,
+            "p95": 2
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 63.4,
+            "p25": 78.7,
+            "p50": 95.2,
+            "p75": 118.8,
+            "p95": 238.7
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 0,
+            "p75": 0,
+            "p95": 4
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.0,
+            "p25": 0.024,
+            "p50": 0.065,
+            "p75": 0.13,
+            "p95": 0.222
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "문두 지시어 반복": 2
+      },
+      "docs_with_1plus_flags": 2,
+      "docs_with_2plus_flags": 0,
+      "rate_1plus": 0.061,
+      "rate_2plus": 0.0,
+      "inanimate_subject_rate": {
+        "mean": 0.0,
+        "docs_nonzero": 0
+      }
+    },
+    "_all": {
+      "docs_total": 261,
+      "docs_over_min_chars": 171,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 0,
+            "p75": 0,
+            "p95": 1
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 50.5,
+            "p25": 61.7,
+            "p50": 72.2,
+            "p75": 86.7,
+            "p95": 121.1
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 0,
+            "p75": 0,
+            "p95": 2
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.0,
+            "p25": 0.0,
+            "p50": 0.0,
+            "p75": 0.0,
+            "p95": 0.15
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "문두 지시어 반복": 3,
+        "짧은 균일 문장": 5,
+        "대구 반복(A가 아니라 B)": 1
+      },
+      "docs_with_1plus_flags": 8,
+      "docs_with_2plus_flags": 1,
+      "rate_1plus": 0.047,
+      "rate_2plus": 0.006,
+      "inanimate_subject_rate": {
+        "mean": 0.001,
+        "docs_nonzero": 4
+      }
+    }
+  },
+  "ai": {
+    "AI·개념 정리": {
+      "docs_total": 6,
+      "docs_over_min_chars": 6,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 1,
+            "p75": 1,
+            "p95": 2
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 31.1,
+            "p25": 31.8,
+            "p50": 35.5,
+            "p75": 39.4,
+            "p95": 44.2
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 2,
+            "p75": 3,
+            "p95": 9
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.0,
+            "p25": 0.014,
+            "p50": 0.036,
+            "p75": 0.037,
+            "p95": 0.043
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "짧은 균일 문장": 6,
+        "문두 지시어 반복": 1
+      },
+      "docs_with_1plus_flags": 6,
+      "docs_with_2plus_flags": 1,
+      "rate_1plus": 1.0,
+      "rate_2plus": 0.167,
+      "inanimate_subject_rate": {
+        "mean": 0.0021,
+        "docs_nonzero": 1
+      }
+    },
+    "AI·딥다이브": {
+      "docs_total": 20,
+      "docs_over_min_chars": 20,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 1,
+            "p50": 3,
+            "p75": 4,
+            "p95": 7
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 43.4,
+            "p25": 46.3,
+            "p50": 50.4,
+            "p75": 58.3,
+            "p95": 71.0
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 1,
+            "p75": 2,
+            "p95": 4
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.018,
+            "p25": 0.024,
+            "p50": 0.039,
+            "p75": 0.983,
+            "p95": 1.0
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "짧은 균일 문장": 5,
+        "합쇼체 종결 일색": 7,
+        "대구 반복(A가 아니라 B)": 10,
+        "문두 지시어 반복": 1
+      },
+      "docs_with_1plus_flags": 17,
+      "docs_with_2plus_flags": 6,
+      "rate_1plus": 0.85,
+      "rate_2plus": 0.3,
+      "inanimate_subject_rate": {
+        "mean": 0.0011,
+        "docs_nonzero": 1
+      }
+    },
+    "AI·코스피 브리핑": {
+      "docs_total": 20,
+      "docs_over_min_chars": 20,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 2,
+            "p25": 2,
+            "p50": 4,
+            "p75": 6,
+            "p95": 10
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 55.4,
+            "p25": 59.1,
+            "p50": 62.8,
+            "p75": 66.0,
+            "p95": 71.8
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 1,
+            "p50": 1,
+            "p75": 2,
+            "p95": 2
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.977,
+            "p25": 0.987,
+            "p50": 0.989,
+            "p75": 0.989,
+            "p95": 0.99
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "대구 반복(A가 아니라 B)": 14,
+        "합쇼체 종결 일색": 19
+      },
+      "docs_with_1plus_flags": 20,
+      "docs_with_2plus_flags": 13,
+      "rate_1plus": 1.0,
+      "rate_2plus": 0.65,
+      "inanimate_subject_rate": {
+        "mean": 0.0022,
+        "docs_nonzero": 4
+      }
+    },
+    "_all": {
+      "docs_total": 46,
+      "docs_over_min_chars": 46,
+      "signals": {
+        "antithesis": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 1,
+            "p50": 3,
+            "p75": 5,
+            "p95": 7
+          }
+        },
+        "mean_sent_len": {
+          "percentiles": {
+            "p5": 32.3,
+            "p25": 46.3,
+            "p50": 57.4,
+            "p75": 62.8,
+            "p95": 68.1
+          }
+        },
+        "demonstratives": {
+          "percentiles": {
+            "p5": 0,
+            "p25": 0,
+            "p50": 1,
+            "p75": 2,
+            "p95": 3
+          }
+        },
+        "nida_share": {
+          "percentiles": {
+            "p5": 0.016,
+            "p25": 0.034,
+            "p50": 0.983,
+            "p75": 0.989,
+            "p95": 1.0
+          }
+        }
+      },
+      "flag_doc_counts": {
+        "대구 반복(A가 아니라 B)": 24,
+        "합쇼체 종결 일색": 26,
+        "짧은 균일 문장": 11,
+        "문두 지시어 반복": 2
+      },
+      "docs_with_1plus_flags": 43,
+      "docs_with_2plus_flags": 20,
+      "rate_1plus": 0.935,
+      "rate_2plus": 0.435,
+      "inanimate_subject_rate": {
+        "mean": 0.0017,
+        "docs_nonzero": 6
+      }
+    }
+  }
+}
