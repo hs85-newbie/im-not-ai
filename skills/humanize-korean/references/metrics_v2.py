@@ -416,54 +416,116 @@ def da_streak_rate(text: str) -> int:
 # ---------------------------------------------------------------------------
 
 
+# T1 보강 (2026-10-21): 금융 장르 실측에서 고정 주어 목록 + 붙여 쓴 동사만으로는
+# 사람·AI 모두 0.0 이었다. "보여 준다/알려 주는/말해 주고"처럼 띄어 쓰거나 활용한
+# 형태, 금융 추상 주어(지표·수치·공시…)를 받도록 넓혔다.
+_INANIMATE_SUBJECTS = (
+    "연구", "데이터", "분석", "결과", "시스템", "기술", "사례",
+    "현상", "이론", "정책", "보고서", "AI", "인공지능", "모델",
+    "알고리즘", "변화", "위기", "혁신", "사회", "경제",
+    "지표", "수치", "숫자", "통계", "흐름", "시장", "공시", "실적",
+    "차트", "발표", "성명", "신호", "구조",
+)
+# 어간 기준 매칭 — "보여 준다·보여주고·보여 주는"을 한 번에 받는다.
+# 나타났다·나타난(자동사)은 사람 글에 흔해 제외한다.
+_UNIVERSAL_VERB_RE = re.compile(
+    r"(?:보여\s?(?:준|줬|주)|알려\s?(?:준|줬|주)|말해\s?(?:준|줬|주)"
+    r"|시사|의미(?:한|하)|드러(?:낸|내|냈)|나타(?:낸|내|냈)|가리(?:킨|키)"
+    r"|뜻(?:한|하)|방증|제시|증명|가져(?:온|오)|만든다|만들어)"
+)
+_INANIMATE_SUBJECT_RE = re.compile(
+    r"(?:%s)(?:은|는|이|가|도)\s+(?:\S+\s+){0,3}\S*%s"
+    % ("|".join(re.escape(x) for x in _INANIMATE_SUBJECTS), _UNIVERSAL_VERB_RE.pattern)
+)
+
+
 def inanimate_subject_rate(text: str) -> float:
     """T1: inanimate-subject + universal-verb pattern rate.
 
-    Approximation: count sentences whose first content noun ends with one
-    of the v2.0 hanja suffixes (-성·-적·-화·-도·-력·-감·-원) OR matches a
-    short list of inanimate/abstract subjects (`연구·데이터·분석·결과·시스템·
-    기술·사례·현상·이론·정책·보고서`) AND whose verb is a universal
-    cognitive/declarative verb (보여준다·시사한다·만든다·드러낸다·제시한다·
-    나타낸다·증명한다·말해준다·의미한다·가져온다). Returns
+    A sentence matches when (a) an inanimate/abstract subject from
+    ``_INANIMATE_SUBJECTS`` + 은/는/이/가/도 is followed within three
+    eojeols by a universal verb (보여 준다·알려 주는·시사한다·의미한다·
+    드러낸다·나타낸다·가리킨다·방증한다 …, spaced or conjugated), or
+    (b) the first token is a v2.0 hanja-suffix noun (-성·-적·-화·-도·-력·
+    -감·-원) and a universal verb appears later. Returns
     matching_sents / total_sents in [0, 1].
+
+    ⚠️ 금융 장르(증권 리포트·경제 뉴스 vs AI 글) 실측에서도 분리력은 약하다
+    (문서 단위 적중 사람 0.4~2.7% vs AI ~9%). 라우팅 근거로 쓰지 않는다.
     """
     sents = _split_sentences(text)
     if not sents:
         return 0.0
-    inanimate_subjects = (
-        "연구", "데이터", "분석", "결과", "시스템", "기술", "사례",
-        "현상", "이론", "정책", "보고서", "AI", "인공지능", "모델",
-        "알고리즘", "변화", "위기", "혁신", "사회", "경제",
-    )
-    universal_verbs = (
-        "보여준다", "보여줬다", "보여주는", "시사한다", "시사하는",
-        "만든다", "만들어", "드러낸다", "드러냈다", "드러내는",
-        "제시한다", "제시했다", "나타낸다", "나타냈다", "나타내는",
-        "증명한다", "증명했다", "말해준다", "말해주는",
-        "의미한다", "의미하는", "가져온다", "가져왔다", "가져오는",
-    )
     hits = 0
     for s in sents:
+        if _INANIMATE_SUBJECT_RE.search(s):
+            hits += 1
+            continue
         toks = _all_tokens(s)
-        if not toks:
+        if len(toks) < 2:
             continue
         head = toks[0]
-        # Subject heuristic: first token, optionally followed by 은/는/이/가.
-        head_stem = head
         for josa in ("은", "는", "이", "가", "도"):
             if head.endswith(josa) and len(head) > 1:
-                head_stem = head[:-1]
+                head = head[:-1]
                 break
-        is_inanimate = (
-            head_stem in inanimate_subjects
-            or (len(head_stem) >= 2 and head_stem[-1] in _HANJA_SUFFIXES_V2)
-        )
-        if not is_inanimate:
-            continue
-        # Verb heuristic: any later token in `universal_verbs`.
-        if any(any(uv in t for uv in universal_verbs) for t in toks[1:]):
-            hits += 1
+        if len(head) >= 2 and head[-1] in _HANJA_SUFFIXES_V2:
+            if _UNIVERSAL_VERB_RE.search("".join(toks[1:])):
+                hits += 1
     return hits / len(sents)
+
+
+# ---------------------------------------------------------------------------
+# 구조 신호 — 금융 장르 라우팅용 (2026-10-21)
+# ---------------------------------------------------------------------------
+# 어휘 티 카운트가 0인데도 구조가 AI 꼴인 글(대구 반복·짧고 균일한 문장·지시어 문두·
+# 합쇼체 일색)이 route_hint=light 로 새던 문제를 막는다. v2 z-score 는 baseline 이
+# placeholder 라 쓰지 않고, 사람 금융 코퍼스(리포트+경제뉴스, >800자 171건)에서
+# 문서 단위 직접 값으로 역치를 잡았다. 근거: tests/baselines/2026-10-21-finance-structural-calibration.json
+STRUCT_MIN_CHARS = 800          # 이보다 짧으면 통계가 불안정해 신호를 내지 않는다
+STRUCT_ANTITHESIS_MIN = 3       # "A가 아니라 B" 문서당 횟수
+STRUCT_MEAN_SENT_LEN_MAX = 45   # 평균 문장 길이가 이 미만이면 플래그
+STRUCT_DEMONSTRATIVE_MIN = 4    # 문두 지시어(이는·이러한·그 …) 문서당 횟수
+STRUCT_NIDA_SHARE_MIN = 0.95    # "-니다" 종결 문장 비율
+
+_ANTITHESIS_RE = re.compile(r"[가이]\s*아니라")
+_STRUCT_SENT_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+_SENT_INITIAL_DEM_RE = re.compile(
+    r"(?:^|[.!?]\s+|\n)(?:이는|이것은|이것이|이들은|그것은|이러한|이런|그)\s"
+)
+# WHY: 마크다운 제목·구분선·불릿은 마침표가 없어 다음 문장에 붙어 평균 문장 길이를
+# 부풀린다(실사례: 개념 글 025 가 45.8 → 제거 후 35.0). 사람 코퍼스에는 없어 영향 0.
+_MD_STRUCT_LINE_RE = re.compile(r"^\s*(?:#{1,6}\s|>|-{3,}|[-*]\s|\|).*$", re.M)
+_NIDA_END_RE = re.compile(r"니다[.!?]?[\"”’']?$")
+
+
+def structural_flags(text: str) -> dict:
+    """문서 단위 구조 신호 4종을 계산해 플래그와 원값을 돌려준다.
+
+    반환: {"flags": [신호 이름…], "values": {antithesis, mean_sent_len,
+    demonstratives, nida_share}}. 800자 이하·빈 입력은 flags 가 빈 리스트.
+    """
+    values = {"antithesis": 0, "mean_sent_len": 0.0, "demonstratives": 0, "nida_share": 0.0}
+    prose = _MD_STRUCT_LINE_RE.sub("", text)
+    sents = [x for x in _STRUCT_SENT_SPLIT_RE.split(prose.strip()) if x.strip()]
+    if len(text.strip()) <= STRUCT_MIN_CHARS or not sents:
+        return {"flags": [], "values": values}
+    values["antithesis"] = len(_ANTITHESIS_RE.findall(text))
+    values["mean_sent_len"] = round(sum(len(x) for x in sents) / len(sents), 1)
+    values["demonstratives"] = len(_SENT_INITIAL_DEM_RE.findall(text))
+    values["nida_share"] = round(
+        sum(bool(_NIDA_END_RE.search(x.strip())) for x in sents) / len(sents), 3
+    )
+    flags = []
+    if values["antithesis"] >= STRUCT_ANTITHESIS_MIN:
+        flags.append("대구 반복(A가 아니라 B)")
+    if values["mean_sent_len"] < STRUCT_MEAN_SENT_LEN_MAX:
+        flags.append("짧은 균일 문장")
+    if values["demonstratives"] >= STRUCT_DEMONSTRATIVE_MIN:
+        flags.append("문두 지시어 반복")
+    if values["nida_share"] >= STRUCT_NIDA_SHARE_MIN:
+        flags.append("합쇼체 종결 일색")
+    return {"flags": flags, "values": values}
 
 
 def by_passive_count(text: str) -> int:

@@ -225,6 +225,22 @@ class V20InterferenceTests(unittest.TestCase):
         text = "철수가 학교에 갔다. 영희가 책을 읽었다. 우리가 함께 놀았다."
         self.assertEqual(metrics_v2.inanimate_subject_rate(text), 0.0)
 
+    def test_inanimate_subject_rate_spaced_verb_and_finance_subject(self) -> None:
+        """띄어 쓴 '보여 준다/알려 주는'과 금융 추상 주어도 잡는다 (금융 장르에서 0.0 이던 문제)."""
+        text = (
+            "이번 지표는 경기가 꺾였음을 보여 준다. "
+            "공시가 시장의 속내를 알려 주고 있다. "
+            "철수가 학교에 갔다."
+        )
+        self.assertAlmostEqual(metrics_v2.inanimate_subject_rate(text), 2 / 3, places=2)
+
+    def test_inanimate_subject_rate_animate_subject_not_counted(self) -> None:
+        text = "애널리스트는 전망을 제시했다. 투자자가 시장을 보여 준다고 말했다."
+        self.assertEqual(metrics_v2.inanimate_subject_rate(text), 0.0)
+
+    def test_inanimate_subject_rate_empty(self) -> None:
+        self.assertEqual(metrics_v2.inanimate_subject_rate(""), 0.0)
+
     # T2a
     def test_by_passive_high(self) -> None:
         text = (
@@ -595,3 +611,52 @@ class AntithesisCountTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StructuralFlagsTests(unittest.TestCase):
+    """금융 장르 구조 신호 4종 (route_hint 상향용). 합성 문자열 기반."""
+
+    @staticmethod
+    def _pad(unit: str, min_chars: int = 900) -> str:
+        return unit * (min_chars // len(unit) + 1)
+
+    def test_empty_and_short_text_have_no_flags(self) -> None:
+        for text in ("", "   ", "짧은 글이다. 이것이 아니라 저것이다."):
+            out = metrics_v2.structural_flags(text)
+            self.assertEqual(out["flags"], [])
+
+    def test_no_sentence_terminator_long_text_does_not_crash(self) -> None:
+        out = metrics_v2.structural_flags("가나다 " * 400)
+        self.assertEqual(out["values"]["antithesis"], 0)
+
+    def test_antithesis_repetition_flagged(self) -> None:
+        text = self._pad("문제는 금리가 아니라 환율이었고 핵심은 속도가 아니라 방향이었다. 그래서 시장은 길게 흔들렸고 투자자는 오래 지켜보았다. ")
+        out = metrics_v2.structural_flags(text)
+        self.assertIn("대구 반복(A가 아니라 B)", out["flags"])
+
+    def test_single_antithesis_below_threshold(self) -> None:
+        body = "금리 인하가 시장에 반영되는 속도는 지난 분기보다 느려졌고 투자자들은 다음 발표를 기다리며 관망하는 모습을 보였다. " * 9
+        text = "이번 하락은 실적이 아니라 수급 때문이었다. " + body
+        self.assertEqual(metrics_v2.structural_flags(text)["flags"], [])
+
+    def test_short_uniform_sentences_flagged(self) -> None:
+        text = self._pad("금리가 올랐다. 환율도 올랐다. 증시는 내렸다. 채권은 보합이었다. ")
+        self.assertIn("짧은 균일 문장", metrics_v2.structural_flags(text)["flags"])
+
+    def test_markdown_headings_do_not_inflate_sentence_length(self) -> None:
+        sent = "짧은 문장이 이어진다. "
+        text = ("## 제목\n\n" + sent * 4 + "\n\n---\n\n") * 12
+        values = metrics_v2.structural_flags(text)["values"]
+        self.assertLess(values["mean_sent_len"], 30)
+
+    def test_sentence_initial_demonstratives_flagged(self) -> None:
+        text = self._pad("이는 금리 인상의 결과로 시장이 흔들렸다는 뜻이다. 이러한 흐름이 길어질 가능성이 있다. 그 영향은 작지 않다. 이런 점에서 투자자는 신중해야 한다. ")
+        self.assertIn("문두 지시어 반복", metrics_v2.structural_flags(text)["flags"])
+
+    def test_nida_dominance_flagged(self) -> None:
+        text = self._pad("오늘 코스피는 전 거래일보다 소폭 상승한 채 장을 마감했으며 외국인 순매수가 이어졌습니다. 환율은 달러 대비 안정적인 흐름을 유지하고 있습니다. ")
+        self.assertIn("합쇼체 종결 일색", metrics_v2.structural_flags(text)["flags"])
+
+    def test_quoted_ending_counts_as_nida(self) -> None:
+        text = self._pad('그는 "시장은 곧 안정될 것입니다." 라고 말했습니다. 다른 전문가도 "그렇습니다." 라고 답했습니다. ')
+        self.assertEqual(metrics_v2.structural_flags(text)["values"]["nida_share"], 1.0)
